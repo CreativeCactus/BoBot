@@ -25,26 +25,41 @@ Now start bobot.js again and it should login!
 
 I have added a few of my own commands into trig.js (and a few in bobot.js).
 
-js `   `   
+js ` something `   
+
 Execute sandboxed javascript
 
-jsunsafe `   ` 
+
+jsunsafe ` something ` 
+
 Execute js in the local scope, Master only
 
-bash `   ` 
+
+bash ` something ` 
+
 Execute bash, Master only
 
-here is a joke for u   
-...
-...
-..!
+
+> here is a joke for u   
+
+> ...
+
+> ...
+
+> ..!
+
 Example of context sensitivity. 
+
 The first message will start a context which responds to every following message "and then?" until a message ends with "!".
 
+
 redmine ...
+
 I am working on integrating with redmine API to get wiki docs.
 
+
 tts on/off
+
 Set tts on or off, Master only
 
 
