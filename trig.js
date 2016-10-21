@@ -23,7 +23,7 @@ module.exports=(self)=>{
         (user, userID, channelID, message, event, ctx)=>{ //set TTS command
             var rx=( /^tts (on|off)/gi ), act = "", ok=(msg)=>{core.sendMessage(channelID||userID,"Set TTS "+msg)}
             if ( message.match(rx) ) act = rx.exec(message)[1].toLocaleLowerCase(); else return
-            if (!ctx.Master) return SayNo(channelID,lackPermit)
+            if (!ctx.Master){ ctx.lackPermit=1; return ctx}
             act={
             "on":  ()=>{ core.config.tts=true;  ok("enabled.") },
             "off": ()=>{ core.config.tts=false; ok("disabled.")}
@@ -31,19 +31,19 @@ module.exports=(self)=>{
             if(act){act();core.saveConfig();}
         },
         (user, userID, channelID, message, event, ctx)=>{ //eval bash command
-            var rx=( /^bash `((.|\n){2,})`/gi ), act = ""
+            var rx=( /^bash `((.|\n|\t){2,})`/gi ), act = ""
             if ( !message.match(rx) ) return
-            if (!ctx.Master)return SayNo(channelID,lackPermit)        
+            if (!ctx.Master){ ctx.lackPermit=1; ctx.lackPermitReason="You are not master."; return ctx}        
             act = rx.exec(message)[1]
             
             if(act)
-            cmd.get(act, function(data){
+            core.cmd.get(act, function(data){
                 core.sendMessage(channelID,data)
             }
         );
         },
         (user, userID, channelID, message, event, ctx)=>{ //Sandbox js command
-            var rx=( /^js `((.|\n){2,})`/gi ), act = ""
+            var rx=( /^js `((.|\n|\t){2,})`/gi ), act = ""
             if ( message.match(rx) ) act = rx.exec(message)[1]
             if(act)           
                 try {
@@ -53,9 +53,9 @@ module.exports=(self)=>{
                 }
         },
         (user, userID, channelID, message, event, ctx)=>{ //Native eval command
-            var rx=( /^jsunsafe `((.|\n){2,})`/gi ), act = ""
+            var rx=( /^jsunsafe `((.|\n|\t){2,})`/gi ), act = ""
             if ( !message.match(rx) ) return
-            if (!ctx.Master)return SayNo(channelID,core.lackPermit)
+            if (!ctx.Master){ ctx.lackPermit=1; ctx.lackPermitReason="You are not master."; return ctx}
             act = rx.exec(message)[1]
             
             if(act)
@@ -90,7 +90,7 @@ module.exports=(self)=>{
         },
         (user, userID, channelID, message, event, ctx)=>{ //redmine command
             if (!ctx.Master)return
-            var rx=( /redmine ((.|\n){2,})/i )
+            var rx=( /redmine ((.|\n|\t){2,})/i )
             if(!message.match(rx))return
             
             act = rx.exec(message)[1]
@@ -108,6 +108,13 @@ module.exports=(self)=>{
             });
         
             return ctx
+        },
+        (user, userID, channelID, message, event, ctx)=>{//Forget Master for this session (debug)
+            var rx=( /(forget master)/gi )
+            if (!message.match(rx) ) return
+            if (!ctx.Master)return
+            self.MasterID=""
+            core.sendMessage(channelID,"Gotcha.")
         }
     ]
 }

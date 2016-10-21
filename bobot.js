@@ -1,9 +1,59 @@
 var Discord = require('discord.io');  
-var cmd=require('node-cmd');
 var Datastore = require('nedb')
   , db = new Datastore({ filename: './bobot.nedb', autoload: true })
   , triggers = [];
-  
+var ContextMemoryDuration = 10
+
+//Private self-observant functions which should implement behaviour such as identifying loops and responding humanly
+function passive(bot, user, userID, channelID, message, event, ctx){
+    //Detect loops (runaway handlers for example)
+    ctx.passive=ctx.passive||{ctr:0}
+    ctx.passive.ctr=ctx.passive.ctr++
+    if(ctx.passive.ctr>100){
+        ctx.break=1;
+        bot.message()
+    }
+    //Respond to noPermission
+    if(ctx.lackPermit){
+        //Determine the reason if any given
+        var why = ctx.lackPermitReason;
+        objif: if(typeof why == 'object'){
+            var keys=Object.keys(why||{})
+            if(keys.length==0){why=undefined; break objif;}
+            var key =keys[~~(Math.random()*keys.length)]
+            why=why[key]            
+        }
+
+        //Formulate a response with the reason (or without)
+        if(typeof why != 'undefined')say=[
+            "I don't think so",
+            "Not so fast",
+            "Not going to happen",
+            "Nope",
+        ]//TODO db, add NLP
+        if(typeof why == 'string')say=[
+            "Not for thee: "+why,
+            "You can't: "+why,
+            "No, because: "+why
+        ]
+
+        say=say[~~(Math.random()*say.length)]+'.'
+
+        //Add some wit
+        var repeat_wit=[
+            " Things don't change that quickly.",
+            " You're not a fast learner, aye you?",
+            " Did you think I might have changed my mind?",
+            " Still.",
+            " Why don't you ask me a few more times to make sure?"
+        ]
+        if(core.mem(ctx.contextID,0).lackPermit)say+=repeat_wit[~~(Math.random()*repeat_wit.length)]
+
+        core.sendMessage(channelID||userID,say)
+        ctx.break=true;
+    }
+    return ctx
+}
   
 //Main functionality to be made available to the triggers
 //All packages used by the bot on command should be added here.
@@ -13,6 +63,7 @@ var core= {
     memory:{},
     notevil:require('notevil'),
     httpreq:require('httpreq'),
+    cmd:require('node-cmd'),
     
     //Until we have some nice natural language generation, this will do
     lackPermit:["cannot permit","not allowed","unprivelaged","no permission"],
@@ -38,36 +89,23 @@ var core= {
         var contextID=(userID+channelID)
         memory[contextID] = memory[contextID] || []
         var ctx = {contextID}
-        for (var t in triggers) //Loop through the triggers in order until one sets the break flag, substituting each returned ctx if any. 
-            if (ctx.break) break; else ctx=triggers[t].call(this,user, userID, channelID, message, event, ctx)||ctx
-        
+        for (var t in triggers){ //Loop through the triggers in order until one sets the break flag, substituting each returned ctx if any. 
+            var args=[user, userID, channelID, message, event]
+            if (ctx.break) break; else 
+                ctx= passive(this, ...args,      triggers[t].call(this, ...args, ctx)||ctx     ) || ctx
+        }
+
         //Add the context to the end of the short term memory, truncate if necessary
         memory[contextID].unshift(ctx)
-        if( memory[contextID].length > 10 ) memory[contextID].pop()
+        if( memory[contextID].length > ContextMemoryDuration ) memory[contextID].pop()
     },
 
     /*
         Add helper functions available to triggers here.
+        Triggers can access helpers from this.FuncName
     */
 
-    //Provide a negative response with optional reason.
-    SayNo:function(to,why){
-        if(typeof why == 'object')why=why[~~(Math.random()*why.length)]
-        if(typeof why == 'string')say=[
-            "I don't think so.",
-            "Not so fast.",
-            "Not going to happen.",
-            "Nope.",
-        ]//TODO db
-        if(typeof why == 'undefined')say=[
-            "Not for thee: "+why,
-            "You can't: "+why,
-            "No, because: "+why
-        ]
-        sendMessage(to,say[~~(Math.random()*say.length)])
-    },
-    
-    //access to past contexts
+    //access to past contexts, most to least recent
     mem:function(contextID,t){
         memo=memory[contextID] || []
         if(t===undefined)return memo
@@ -77,7 +115,9 @@ var core= {
     //sendmessage wrapper
     sendMessage:function(to, message){
         message=message||"`nil`"
-        bot.sendMessage({to,message,tts:config.tts});
+        if(message.length>=2000)message=message.match(/((.|\n|\t){1,2000})/gi)
+        if(typeof message == "object") for(m in message)if(message.hasOwnProperty(m))arguments.callee(to,message[m])
+        bot.sendMessage({to,message,tts:config.tts})
     },
     
     //config data to DB
@@ -99,7 +139,7 @@ var core= {
     
     //Initialize instructions
     InitHelp:function(){
-        console.log(`BoBot v20160923.
+        console.log(`BoBot v20161021.
         To initialize, edit bobot.nedb in strict JSON according to entries. 
         Change init:false to init:true, then restart bobot.js`)
     }
@@ -118,14 +158,18 @@ db.find({type:"config",init:true},(err,docs)=>{
     }
     if(!docs[0].init)return InitHelp();
     
+    //Syntax note: this is a declaration. Same as `config=docs[0].config`
     ({//get config from db
         config, //configurations
         memory  //short term mem
     }=docs[0])
-    
+    if(!config)console.log(`WARNING: ({obj}=objs[0]) syntax unsupported!`)
+
+
     //set up some vars in this scope before we init triggers
-    var MasterID = config.masterid
-    var MyID = config.myid
+    this.MasterID = config.masterid
+    this.MyID = config.myid
+    core.config=config
     this.core=core
     triggers = require('./trig.js')(this)
     
