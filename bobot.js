@@ -1,103 +1,109 @@
-var Discord = require('discord.io');  
+var Discord = require('discord.io');
 var Datastore = require('nedb')
-  , db = new Datastore({ filename: './bobot.nedb', autoload: true })
-  , triggers = [];
+    , db = new Datastore({ filename: './bobot.nedb', autoload: true })
+    , triggers = [];
 var ContextMemoryDuration = 10
 
 //Private self-observant functions which should implement behaviour such as identifying loops and responding humanly
-function passive(bot, user, userID, channelID, message, event, ctx){
+function passive(bot, user, userID, channelID, message, event, ctx) {
     //Detect loops (runaway handlers for example)
-    ctx.passive=ctx.passive||{ctr:0}
-    ctx.passive.ctr=ctx.passive.ctr++
-    if(ctx.passive.ctr>100){
-        ctx.break=1;
+    ctx.passive = ctx.passive || { ctr: 0 }
+    ctx.passive.ctr = ctx.passive.ctr++
+    if (ctx.passive.ctr > 100) {
+        ctx.break = 1;
         bot.message()
     }
     //Respond to noPermission
-    if(ctx.lackPermit){
+    if (ctx.lackPermit) {
         //Determine the reason if any given
         var why = ctx.lackPermitReason;
-        objif: if(typeof why == 'object'){
-            var keys=Object.keys(why||{})
-            if(keys.length==0){why=undefined; break objif;}
-            var key =keys[~~(Math.random()*keys.length)]
-            why=why[key]            
+        objif: if (typeof why == 'object') {
+            var keys = Object.keys(why || {})
+            if (keys.length == 0) { why = undefined; break objif; }
+            var key = keys[~~(Math.random() * keys.length)]
+            why = why[key]
         }
 
         //Formulate a response with the reason (or without)
-        if(typeof why != 'undefined')say=[
+        if (typeof why != 'undefined') say = [
             "I don't think so",
             "Not so fast",
             "Not going to happen",
             "Nope",
         ]//TODO db, add NLP
-        if(typeof why == 'string')say=[
-            "Not for thee: "+why,
-            "You can't: "+why,
-            "No, because: "+why
+        if (typeof why == 'string') say = [
+            "Not for thee: " + why,
+            "You can't: " + why,
+            "No, because: " + why
         ]
 
-        say=say[~~(Math.random()*say.length)]+'.'
+        say = say[~~(Math.random() * say.length)] + '.'
 
         //Add some wit
-        var repeat_wit=[
+        var repeat_wit = [
             " Things don't change that quickly.",
             " You're not a fast learner, aye you?",
             " Did you think I might have changed my mind?",
             " Still.",
             " Why don't you ask me a few more times to make sure?"
         ]
-        if(core.mem(ctx.contextID,0).lackPermit)say+=repeat_wit[~~(Math.random()*repeat_wit.length)]
+        if (core.mem(ctx.contextID, 0).lackPermit) say += repeat_wit[~~(Math.random() * repeat_wit.length)]
 
-        core.sendMessage(channelID||userID,say)
-        ctx.break=true;
+        core.sendMessage(channelID || userID, say)
+        ctx.break = true;
     }
     return ctx
 }
-  
+
 //Main functionality to be made available to the triggers
 //All packages used by the bot on command should be added here.
-var core= {
-    bot:{},
-    config:{},
-    memory:{},
-    notevil:require('notevil'),
-    httpreq:require('httpreq'),
-    cmd:require('node-cmd'),
-    
+const vmSbox = { a: 2 };
+const vm = require('vm');
+
+var core = {
+    bot: {},
+    config: {},
+    memory: {},
+    vmSbox,
+    vmCtx: new vm.createContext(vmSbox),
+    vm,
+    notevil: require('notevil'),
+    httpreq: require('httpreq'),
+    cmd: require('node-cmd'),
+
     //Until we have some nice natural language generation, this will do
-    lackPermit:["cannot permit","not allowed","unprivelaged","no permission"],
-    
+    lackPermit: ["cannot permit", "not allowed", "unprivelaged", "no permission"],
+
     //Handle a message event
-    HandleMessage:function(user, userID, channelID, message, event) {
+    HandleMessage: function (user, userID, channelID, message, event) {
         //Hard coded handlers can go here
-        if (message === "ping") return bot.sendMessage({to: channelID, message: "pong"});
-        
+        if (message === "ping") return bot.sendMessage({ to: channelID, message: "pong" });
+
         if (message === "GetBobotID") {
-            bot.sendMessage({to: channelID, message: "BobotIDCheck::"});
-            console.log("Bobot ID check from: "+userID)
+            bot.sendMessage({ to: channelID, message: "BobotIDCheck::" });
+            console.log("Bobot ID check from: " + userID)
             return
         }
         if (message === "BobotID::") {
-            console.log("Bobot ID is: "+userID)
+            console.log("Bobot ID is: " + userID)
             return
         }
-        
-        if (message === "share bobot") return bot.sendMessage({to: userID, message: config.sharelink});
-        
+
+        if (message === "share bobot") return bot.sendMessage({ to: userID, message: config.sharelink });
+
         //Prepare the context for short term memory commands
-        var contextID=(userID+channelID)
+        var contextID = (userID + channelID)
         memory[contextID] = memory[contextID] || []
-        var ctx = {contextID}
-        for (var t in triggers){ //Loop through the triggers in order until one sets the break flag, substituting each returned ctx if any. 
-            var args=[user, userID, channelID, message, event]
-            if (ctx.break) break; else 
-                ctx= passive(this, ...args,      triggers[t].call(this, ...args, ctx)||ctx     ) || ctx
+        var ctx = { contextID }
+        for (var t in triggers) { //Loop through the triggers in order until one sets the break flag, substituting each returned ctx if any. 
+            var args = [user, userID, channelID, message, event]
+            if (ctx.break) break; else
+                ctx = passive(this, ...args, triggers[t].call(this, ...args, ctx) || ctx) || ctx
         }
 
         //Add the context to the end of the short term memory, truncate if necessary
         memory[contextID].unshift(ctx)
-        if( memory[contextID].length > ContextMemoryDuration ) memory[contextID].pop()
+        if (memory[contextID].length > ContextMemoryDuration) memory[contextID].pop()
     },
 
     /*
@@ -106,79 +112,81 @@ var core= {
     */
 
     //access to past contexts, most to least recent
-    mem:function(contextID,t){
-        memo=memory[contextID] || []
-        if(t===undefined)return memo
+    mem: function (contextID, t) {
+        memo = memory[contextID] || []
+        if (t === undefined) return memo
         return memo[t] || {}
     },
-    
+
     //sendmessage wrapper
-    sendMessage:function(to, message){
-        message=message||"`nil`"
-        if(message.length>=2000)message=message.match(/((.|\n|\t){1,2000})/gi)
-        if(typeof message == "object") for(m in message)if(message.hasOwnProperty(m))arguments.callee(to,message[m])
-        bot.sendMessage({to,message,tts:config.tts})
+    sendMessage: function (to, message) {
+        message = message || "`nil`"
+        if (message.length >= 2000) message = message.match(/((.|\n|\t){1,2000})/gi)
+        if (typeof message == "object") for (m in message) if (message.hasOwnProperty(m)) arguments.callee(to, message[m])
+        bot.sendMessage({ to, message, tts: config.tts })
     },
-    
+
     //config data to DB
-    saveConfig:function(overwrite){
-        overwrite=overwrite||{config,memory}
-        db.remove({type:"config"},{},()=>{})
-        db.insert(overwrite,()=>{})
+    saveConfig: function (overwrite) {
+        overwrite = overwrite || { config, memory }
+        db.remove({ type: "config" }, {}, () => { })
+        db.insert(overwrite, () => { })
     },
-    
+
     //uploadFile wrapper
-    sendFile:function(){
-    // bot.uploadFile({
-    //     to: "Your Channel ID",
-    //     file: "fillsquare.png",
-    //     filename: "fillCIRCLE.png", //File will be uploaded to Discord as 'fillCIRCLE.png'
-    //     message: "This is my uploaded file"
-    // });
+    sendFile: function (to, msg, fname, data) {
+        bot.uploadFile({
+            to,
+            file: data || fname,
+            filename: fname, //File will be uploaded to Discord as 'fillCIRCLE.png'
+            message: msg
+        }, (err, res) => {
+            if (err) console.dir({ err });
+        });
     },
-    
+
     //Initialize instructions
-    InitHelp:function(){
+    InitHelp: function () {
         console.log(`BoBot v20161021.
         To initialize, edit bobot.nedb in strict JSON according to entries. 
         Change init:false to init:true, then restart bobot.js`)
     }
 }
-  
+
 //Initialize app
-db.find({type:"config",init:true},(err,docs)=>{
-    if(err)      return console.dir({StartupERR:err})
-    
-    if(docs.length==0){
+db.find({ type: "config", init: true }, (err, docs) => {
+    if (err) return console.dir({ StartupERR: err })
+
+    if (docs.length == 0) {
         //first run init, ask for token
         console.log("Init")
-        db.insert({init:false,type:"config",config:{token:"MyAPIToken",myid:"MyBotID",masterid:"MyMastersID",tts:false,sharelink:"optional link to add to server"},memory:{}},
-                (err)=>{if(err)console.log("INITERR:"+JSON.stringify(err))})
+        db.insert({ init: false, type: "config", config: { token: "MyAPIToken", myid: "MyBotID", masterid: "MyMastersID", tts: false, sharelink: "optional link to add to server" }, memory: {} },
+            (err) => { if (err) console.log("INITERR:" + JSON.stringify(err)) })
         return InitHelp();
     }
-    if(!docs[0].init)return InitHelp();
-    
+    if (!docs[0].init) return InitHelp();
+
     //Syntax note: this is a declaration. Same as `config=docs[0].config`
     ({//get config from db
         config, //configurations
         memory  //short term mem
-    }=docs[0])
-    if(!config)console.log(`WARNING: ({obj}=objs[0]) syntax unsupported!`)
+    } = docs[0])
+    if (!config) console.log(`WARNING: ({obj}=objs[0]) syntax unsupported!`)
 
 
     //set up some vars in this scope before we init triggers
     this.MasterID = config.masterid
     this.MyID = config.myid
-    core.config=config
-    this.core=core
+    core.config = config
+    this.core = core
     triggers = require('./trig.js')(this)
-    
+
     console.log(`Initialised ${triggers.length} triggers`)
     bot = new Discord.Client({
         autorun: true,
         token: config.token
     });
 
-    bot.on('ready', function(event) {    console.log('Logged in')   });
+    bot.on('ready', function (event) { console.log('Logged in') });
     bot.on('message', core.HandleMessage);
 })
