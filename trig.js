@@ -1,3 +1,6 @@
+// *** MODULE DEFINITIONS *** //
+
+//Image generation and VM
 const util = require('util');
 var gd = require('node-gd');
 
@@ -11,10 +14,23 @@ function runVM(vm, code, ctx) {
     }
 }
 
+//Webhooks server
+var express = require('express')
+  , app = express.createServer();
+app.use(express.bodyParser());
+webhookInit=(self,channelID)=>{
+    app.post('/webhook', function(request, response){
+        core.sendMessage(channelID,"Got webhook event. See logs.");
+        console.dir(request.body);
+        response.send(300);
+    });
+    app.listen(65000);
+}
 
+// Main setup for triggers
 module.exports = (self) => {
     var core = self.core
-
+    webhookInit(self,'189140606700748800');
     //Initialize sub-triggers in trig-something.js here, using the same format, and attach to the core
     //then call the sub-triggers from a small handler in this main list.
     //In this way the handlers can be organized heirarchically and response time is improved.
