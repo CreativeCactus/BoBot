@@ -17,7 +17,9 @@ function runVM(vm, code, ctx) {
 //Webhooks server
 var express = require('express')
   , app = express();
-app.use(express.bodyParser());
+bodyParser = require('body-parser');
+app.use(bodyParser.json());
+
 webhookInit=(self,channelID)=>{
     app.post('/webhook', function(req, res){
         core.sendMessage(channelID,"Got webhook event. See logs.");
