@@ -25,17 +25,24 @@ app.use(bodyParser.json());
 webhookInit=(self,core,channelID)=>{
     app.post('/webhook', function(req, res){
 	const event = req.body;
+	const repo = event.repository.full_name;
 	// If this is a push event, message
-	if(event.pusher){
+	if(event.pusher && !event.ref_type){
 		const user = event.pusher;
 		const repo = event.repository.full_name;
+		const branch = '';
 		const url = event.compare_url.replace('http://localhost:','');
 
 		let message = event.commits.map( (v, i) => {return i>10?"":`${neat(v.message,160)}\n`})
 		message = message.join('')+(message.length>=10?`... ${message.length-10} more.\n`:'')
 
-        	core.sendMessage(channelID,`\`${name(user)}\` just pushed to \`${repo}\`.\n\`\`\`${message}\`\`\`\nCompare: \`${url}\``);
-	} else {
+        core.sendMessage(channelID,`\`${name(user)}\` pushed to \`${repo}#${branch}\`.\n\`\`\`${message}\`\`\`\nCompare: \`${url}\``);
+	} else if (event.ref_type==='branch'){
+		const branch = '';
+		const branch2 = event.ref;
+        const url = event.repository.html_url;
+        core.sendMessage(channelID,`\`${event.sender.username}\` branched \`${repo}#${branch}->${branch2}\`.\nSee: \`${url}\``);
+    } else {
 		if(self.MasterID)core.sendMessage(self.MasterID,"Unknown webhook, see logs");
 		console.log('Unknown webhook: '+JSON.stringify(event,null,0))
 	}
