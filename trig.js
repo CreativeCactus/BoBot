@@ -34,7 +34,7 @@ webhookInit=(self,core,channelID)=>{
 		let message = event.commits.map( (v, i) => {return i>10?"":`${neat(v.message,160)}\n`})
 		message = message.join('')+(message.length>=10?`... ${message.length-10} more.\n`:'')
 
-        	core.sendMessage(channelID,`${name(user)} just pushed to ${repo}.\n\`${message}\`\nCompare: ${url}`);
+        	core.sendMessage(channelID,`\`${name(user)}\` just pushed to \`${repo}\`.\n\`\`\`${message}\`\`\`\nCompare: \`${url}\``);
 	} else {
 		if(self.MasterID)core.sendMessage(self.MasterID,"Unknown webhook, see logs");
 		console.log('Unknown webhook: '+JSON.stringify(event,null,0))
