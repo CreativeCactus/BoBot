@@ -1,0 +1,26 @@
+{
+  "name": "bobot",
+  "version": "1.0.0",
+  "description": "A framework for a discord bot including context sensitivity and extensible triggers",
+  "main": "bobot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CreativeCactus/BoBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CreativeCactus/BoBot/issues"
+  },
+  "homepage": "https://github.com/CreativeCactus/BoBot#readme",
+  "dependencies": {
+    "discord.io": "^2.5.1",
+    "httpreq": "^0.4.23",
+    "nedb": "^1.8.0",
+    "node-cmd": "^2.0.0",
+    "node-gd": "^1.4.0"
+  }
+}
