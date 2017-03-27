@@ -15,6 +15,8 @@ function runVM(vm, code, ctx) {
 }
 
 //Webhooks server
+const name = u => u.full_name ? u.full_name + ` (${u.username})` : u.username;
+const neat = (s,n)=>{if(s.length<n)return s; return s.trim(0,n-3)+"...";}
 var express = require('express')
   , app = express();
 bodyParser = require('body-parser');
@@ -26,14 +28,16 @@ webhookInit=(self,core,channelID)=>{
 	// If this is a push event, message
 	if(event.pusher){
 		const user = event.pusher;
-		const name = user.full_name ? user.full_name + ` (${user.username})` : user.username;
 		const repo = event.repository.full_name;
 		const url = event.compare_url.replace('http://localhost:','');
-        	core.sendMessage(channelID,`${name} just pushed to ${repo}. Check here: ${url}`);
+
+		let message = event.commits.map( (v, i) => {return i>10?"":`${neat(v.message,160)}\n`})
+		message = message.join('')+(message.length>=10?`... ${message.length-10} more.\n`:'')
+
+        	core.sendMessage(channelID,`${name(user)} just pushed to ${repo}.\n\`${message}\`\nCompare: ${url}`);
 	} else {
 		if(self.MasterID)core.sendMessage(self.MasterID,"Unknown webhook, see logs");
-        	console.dir(req.body);
-		console.log(JSON.stringify(event,null,0))
+		console.log('Unknown webhook: '+JSON.stringify(event,null,0))
 	}
         res.sendStatus(300);res.end();
     });
