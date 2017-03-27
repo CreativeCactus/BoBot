@@ -67,7 +67,6 @@ var core = {
     vmSbox,
     vmCtx: new vm.createContext(vmSbox),
     vm,
-    notevil: require('notevil'),
     httpreq: require('httpreq'),
     cmd: require('node-cmd'),
 

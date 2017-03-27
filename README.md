@@ -4,6 +4,8 @@ A framework for a discord bot including context sensitivity and extensible trigg
 To start your very own Discord.gg bot, run:
 
 ```
+      apt-get install libgd2-dev
+      npm i
       node bobot.js    
 ```
 
