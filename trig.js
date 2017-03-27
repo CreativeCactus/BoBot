@@ -16,13 +16,13 @@ function runVM(vm, code, ctx) {
 
 //Webhooks server
 var express = require('express')
-  , app = express.createServer();
+  , app = express();
 app.use(express.bodyParser());
 webhookInit=(self,channelID)=>{
-    app.post('/webhook', function(request, response){
+    app.post('/webhook', function(req, res){
         core.sendMessage(channelID,"Got webhook event. See logs.");
-        console.dir(request.body);
-        response.send(300);
+        console.dir(req.body);
+        res.send(300);
     });
     app.listen(65000);
 }
