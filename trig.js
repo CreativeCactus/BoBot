@@ -20,7 +20,7 @@ var express = require('express')
 bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
-webhookInit=(self,channelID)=>{
+webhookInit=(self,core,channelID)=>{
     app.post('/webhook', function(req, res){
         core.sendMessage(channelID,"Got webhook event. See logs.");
         console.dir(req.body);
@@ -32,7 +32,7 @@ webhookInit=(self,channelID)=>{
 // Main setup for triggers
 module.exports = (self) => {
     var core = self.core
-    webhookInit(self,'189140606700748800');
+    webhookInit(self,core,'189140606700748800');
     //Initialize sub-triggers in trig-something.js here, using the same format, and attach to the core
     //then call the sub-triggers from a small handler in this main list.
     //In this way the handlers can be organized heirarchically and response time is improved.
