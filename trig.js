@@ -22,9 +22,20 @@ app.use(bodyParser.json());
 
 webhookInit=(self,core,channelID)=>{
     app.post('/webhook', function(req, res){
-        core.sendMessage(channelID,"Got webhook event. See logs.");
-        console.dir(req.body);
-        res.send(300);
+	const event = req.body;
+	// If this is a push event, message
+	if(event.pusher){
+		const user = event.pusher;
+		const name = user.full_name ? user.full_name + ` (${user.username})` : user.username;
+		const repo = event.repository.full_name;
+		const url = event.compare_url.replace('http://localhost:','');
+        	core.sendMessage(channelID,`${name} just pushed to ${repo}. Check here: ${url}`);
+	} else {
+		if(self.MasterID)core.sendMessage(self.MasterID,"Unknown webhook, see logs");
+        	console.dir(req.body);
+		console.log(JSON.stringify(event,null,0))
+	}
+        res.sendStatus(300);res.end();
     });
     app.listen(65000);
 }
@@ -32,7 +43,7 @@ webhookInit=(self,core,channelID)=>{
 // Main setup for triggers
 module.exports = (self) => {
     var core = self.core
-    webhookInit(self,core,'189140606700748800');
+    webhookInit(self,core,'295870878762270720');
     //Initialize sub-triggers in trig-something.js here, using the same format, and attach to the core
     //then call the sub-triggers from a small handler in this main list.
     //In this way the handlers can be organized heirarchically and response time is improved.
