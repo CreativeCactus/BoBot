@@ -1,4 +1,4 @@
-var Discord = require('discord.io');
+const Discord = require("discord.js");
 var Datastore = require('nedb')
     , db = new Datastore({ filename: './bobot.nedb', autoload: true })
     , triggers = [];
@@ -181,16 +181,17 @@ db.find({ type: "config", init: true }, (err, docs) => {
     triggers = require('./trig.js')(this)
 
     console.log(`Initialised ${triggers.length} triggers`)
-    bot = new Discord.Client({
-        autorun: true,
-        token: config.token
-    });
 
-    bot.on('ready', function (event) { console.log('Logged in') });
+    bot = new Discord.Client();
+
+    bot.on('ready', function (event) { console.log('Logged in as ${client.user.username}') });
     bot.on('message', core.HandleMessage);
+
+    bot.login(config.token);
+
     bot.on('disconnect', function(msg, code) {
-	console.log('Reconnect...');
-	if (code === 0) return console.error(msg);
-	bot.connect();
+        console.log('Reconnect...');
+        if (code === 0) return console.error(msg);
+        bot.connect();
     });
 })
