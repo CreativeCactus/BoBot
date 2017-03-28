@@ -74,7 +74,13 @@ var core = {
     lackPermit: ["cannot permit", "not allowed", "unprivelaged", "no permission"],
 
     //Handle a message event
-    HandleMessage: function (user, userID, channelID, message, event) {
+    HandleMessage: function (msg) {
+	const user = msg.author.username;
+	const userID = msg.author.id;
+	const message = msg.type=='DEFAULT' ? msg.content : msg.type;
+	const channelID = msg.channel.id || userID;
+	const event = msg.type;
+
         //Hard coded handlers can go here
         if (message === "ping") return bot.sendMessage({ to: channelID, message: "pong" });
 
@@ -184,7 +190,7 @@ db.find({ type: "config", init: true }, (err, docs) => {
 
     bot = new Discord.Client();
 
-    bot.on('ready', function (event) { console.log('Logged in as ${client.user.username}') });
+    bot.on('ready', function (event) { console.log(`Logged in as ${bot.user.username}`) });
     bot.on('message', core.HandleMessage);
 
     bot.login(config.token);
@@ -192,6 +198,6 @@ db.find({ type: "config", init: true }, (err, docs) => {
     bot.on('disconnect', function(msg, code) {
         console.log('Reconnect...');
         if (code === 0) return console.error(msg);
-        bot.connect();
+//        bot.connect();
     });
 })
