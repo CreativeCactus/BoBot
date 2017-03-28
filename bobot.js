@@ -146,7 +146,7 @@ var core = {
 
     //Initialize instructions
     InitHelp: function () {
-        console.log(`BoBot v20161021.
+        console.log(`BoBot v20170328.
         To initialize, edit bobot.nedb in strict JSON according to entries. 
         Change init:false to init:true, then restart bobot.js`)
     }
@@ -188,4 +188,9 @@ db.find({ type: "config", init: true }, (err, docs) => {
 
     bot.on('ready', function (event) { console.log('Logged in') });
     bot.on('message', core.HandleMessage);
+    bot.on('disconnect', function(msg, code) {
+	console.log('Reconnect...');
+	if (code === 0) return console.error(msg);
+	bot.connect();
+    });
 })
