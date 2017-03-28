@@ -75,6 +75,7 @@ var core = {
 
     //Handle a message event
     HandleMessage: function (user, userID, channelID, message, event) {
+        
         //Hard coded handlers can go here
         if (message === "ping") return bot.sendMessage({ to: channelID, message: "pong" });
 
