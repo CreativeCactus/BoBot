@@ -5,7 +5,7 @@ var Datastore = require('nedb')
 var ContextMemoryDuration = 10
 
 //Private self-observant functions which should implement behaviour such as identifying loops and responding humanly
-function passive(bot, user, userID, channelID, message, event, ctx) {
+function passive(bot, user, userID, channel, message, event, ctx) {
     //Detect loops (runaway handlers for example)
     ctx.passive = ctx.passive || { ctr: 0 }
     ctx.passive.ctr = ctx.passive.ctr++
@@ -49,7 +49,7 @@ function passive(bot, user, userID, channelID, message, event, ctx) {
         ]
         if (core.mem(ctx.contextID, 0).lackPermit) say += repeat_wit[~~(Math.random() * repeat_wit.length)]
 
-        core.sendMessage(channelID || userID, say)
+        core.sendMessage(channel, say)
         ctx.break = true;
     }
     return ctx
@@ -74,13 +74,19 @@ var core = {
     lackPermit: ["cannot permit", "not allowed", "unprivelaged", "no permission"],
 
     //Handle a message event
-    HandleMessage: function (user, userID, channelID, message, event) {
-        
+    HandleMessage: function (msg) {
+        const user = msg.author.username;
+        const userID = msg.author.id;
+        const message = msg.type=='DEFAULT' ? msg.content : msg.type;
+        const channel = msg.channel;
+        const channelID = channel.id || userID;
+        const event = msg.type;
+
         //Hard coded handlers can go here
-        if (message === "ping") return bot.sendMessage({ to: channelID, message: "pong" });
+        if (message === "ping") return msg.channel.sendMessage("pong" );
 
         if (message === "GetBobotID") {
-            bot.sendMessage({ to: channelID, message: "BobotIDCheck::" });
+            msg.channel.sendMessage("BobotIDCheck::");
             console.log("Bobot ID check from: " + userID)
             return
         }
@@ -89,7 +95,7 @@ var core = {
             return
         }
 
-        if (message === "share bobot") return bot.sendMessage({ to: userID, message: config.sharelink });
+        if (message === "share bobot") return msg.channel.sendMessage(config.sharelink);
 
         //Prepare the context for short term memory commands
         var contextID = (userID + channelID)
@@ -98,7 +104,7 @@ var core = {
         for (var t in triggers) { //Loop through the triggers in order until one sets the break flag, substituting each returned ctx if any. 
             var args = [user, userID, channelID, message, event]
             if (ctx.break) break; else
-                ctx = passive(this, ...args, triggers[t].call(this, ...args, ctx) || ctx) || ctx
+                ctx = passive(bot, user, userID, channel, message, event, triggers[t].call(this, ...args, ctx) || ctx) || ctx
         }
 
         //Add the context to the end of the short term memory, truncate if necessary
@@ -119,11 +125,11 @@ var core = {
     },
 
     //sendmessage wrapper
-    sendMessage: function (to, message) {
+    sendMessage: function (channel, message) {
         message = message || "`nil`"
-        if (message.length >= 2000) message = message.match(/((.|\n|\t){1,2000})/gi)
+        if (message.length >= 2000) message = message.match(/((.|\n|\t){1,1996})/gi)+'...';
         if (typeof message == "object") for (m in message) if (message.hasOwnProperty(m)) arguments.callee(to, message[m])
-        bot.sendMessage({ to, message, tts: config.tts })
+        channel.sendMessage(message)//{ to, message, tts: config.tts })
     },
 
     //config data to DB
@@ -185,7 +191,7 @@ db.find({ type: "config", init: true }, (err, docs) => {
 
     bot = new Discord.Client();
 
-    bot.on('ready', function (event) { console.log('Logged in as ${client.user.username}') });
+    bot.on('ready', function (event) { console.log(`Logged in as ${bot.user.username}`); bot.sendMessage('295870878762270720','ready'); });
     bot.on('message', core.HandleMessage);
 
     bot.login(config.token);
@@ -193,6 +199,6 @@ db.find({ type: "config", init: true }, (err, docs) => {
     bot.on('disconnect', function(msg, code) {
         console.log('Reconnect...');
         if (code === 0) return console.error(msg);
-        bot.connect();
+//        bot.connect();
     });
 })
