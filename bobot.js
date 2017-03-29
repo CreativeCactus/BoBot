@@ -191,7 +191,7 @@ db.find({ type: "config", init: true }, (err, docs) => {
 
     bot = new Discord.Client();
 
-    bot.on('ready', function (event) { console.log(`Logged in as ${bot.user.username}`); bot.sendMessage('295870878762270720','ready'); });
+    bot.on('ready', function (event) { console.log(`Logged in as ${bot.user.username}`); bot.channels.get('295870878762270720').sendMessage('ready'); });
     bot.on('message', core.HandleMessage);
 
     bot.login(config.token);
