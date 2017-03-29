@@ -143,10 +143,9 @@ var core = {
 
     //uploadFile wrapper
     sendFile: function (to, msg, fname, data) {
-        bot.uploadFile({
-            to,
-            file: data || fname,
-            filename: fname, //File will be uploaded to Discord as 'fillCIRCLE.png'
+        to.sendFile({
+            attachment: data || fname,
+            name: fname, //File will be uploaded to Discord as 'fillCIRCLE.png'
             message: msg
         }, (err, res) => {
             if (err) console.dir({ err });
