@@ -61,21 +61,21 @@ module.exports = (self) => {
 
 
     return [
-        (user, userID, channelID, message, event, ctx) => { //always run example
+        (user, userID, channel, message, event, ctx) => { //always run example
             console.log(`${userID} said :` + message)
             //console.dir(self.sendMessage) //undefined? why?
             return ctx//this is not needed if no change will be made to the ctx
         },
-        (user, userID, channelID, message, event, ctx) => { //ignore myself
+        (user, userID, channel, message, event, ctx) => { //ignore myself
             ctx.break = (userID == self.MyID)
             return ctx
         },
-        (user, userID, channelID, message, event, ctx) => { //Set up a flag for Is masters message
+        (user, userID, channel, message, event, ctx) => { //Set up a flag for Is masters message
             ctx.Master = (userID == self.MasterID)
             return ctx
         },
-        // (user, userID, channelID, message, event, ctx) => { //set TTS command
-        //     var rx = (/^tts (on|off)/gi), act = "", ok = (msg) => { core.sendMessage(channelID || userID, "Set TTS " + msg) }
+        // (user, userID, channel, message, event, ctx) => { //set TTS command
+        //     var rx = (/^tts (on|off)/gi), act = "", ok = (msg) => { core.sendMessage(channel || userID, "Set TTS " + msg) }
         //     if (message.match(rx)) act = rx.exec(message)[1].toLocaleLowerCase(); else return
         //     if (!ctx.Master) { ctx.lackPermit = 1; return ctx }
         //     act = {
@@ -84,7 +84,7 @@ module.exports = (self) => {
         //     }[act]
         //     if (act) { act(); core.saveConfig(); }
         // },
-        // (user, userID, channelID, message, event, ctx)=>{ //eval bash command
+        // (user, userID, channel, message, event, ctx)=>{ //eval bash command
         //     var rx=( /^bash `((.|\n|\t){2,})`/gi ), act = ""
         //     if ( !message.match(rx) ) return
         //     if (!ctx.Master){ ctx.lackPermit=1; ctx.lackPermitReason="You are not master."; return ctx}        
@@ -92,12 +92,12 @@ module.exports = (self) => {
 
         //     if(act)
         //     core.cmd.get(act, function(data){
-        //         core.sendMessage(channelID,data)
+        //         core.sendMessage(channel,data)
         //     }
         // );
         // },
 
-        (user, userID, channelID, message, event, ctx) => { // Draw command
+        (user, userID, channel, message, event, ctx) => { // Draw command
             var rx = (/^bobot draw (.*)/gi)
             if (!message.match(rx)) return
 
@@ -123,10 +123,10 @@ module.exports = (self) => {
 
             img.stringFT(txtColor, fontPath, 24, 0, 10, 50, msg || 'Hello world!');
 
-            core.sendFile(channelID, '', 'example.png', Buffer.from(img.pngPtr(), 'binary'));
+            core.sendFile(channel, '', 'example.png', Buffer.from(img.pngPtr(), 'binary'));
 
         },
-        (user, userID, channelID, message, event, ctx) => { // Sandbox js command
+        (user, userID, channel, message, event, ctx) => { // Sandbox js command
             var rx = (/^js (`{1,3})((.|\n|\t){1,})(\1)/gi), act = ``, wrap = ``;
             if (!message.match(rx)) return
             let rxe = rx.exec(message);
@@ -134,9 +134,9 @@ module.exports = (self) => {
             wrap = rxe[1];
 
             if (!act) return;
-            core.sendMessage(channelID, wrap + runVM(core.vm, act, core.vmCtx) + wrap);
+            core.sendMessage(channel, wrap + runVM(core.vm, act, core.vmCtx) + wrap);
         },
-        // (user, userID, channelID, message, event, ctx)=>{ // Native eval command
+        // (user, userID, channel, message, event, ctx)=>{ // Native eval command
         //     var rx=( /^jsunsafe `((.|\n|\t){2,})`/gi ), act = ""
         //     if ( !message.match(rx) ) return
         //     if (!ctx.Master){ ctx.lackPermit=1; ctx.lackPermitReason="You are not master."; return ctx}
@@ -144,47 +144,47 @@ module.exports = (self) => {
 
         //     if(act)
         //     cmd.get(act, function(data){
-        //         core.sendMessage(channelID,data)
+        //         core.sendMessage(channel,data)
         //     }
         // );
         // },
-        // (user, userID, channelID, message, event, ctx)=>{ //allow setting a 'joke' context command
+        // (user, userID, channel, message, event, ctx)=>{ //allow setting a 'joke' context command
         //     var rx=( /here is a joke 4 u/i )
         //     if(!message.match(rx))return
 
         //     ctx.context='joke'
         //     console.log(`Joke in context ${ctx.contextID}`)
-        //     core.sendMessage(channelID,"Oh pls tell me ur joke.")
+        //     core.sendMessage(channel,"Oh pls tell me ur joke.")
         //     return ctx
         // },
-        // (user, userID, channelID, message, event, ctx)=>{ //behaviours within a joke context command
+        // (user, userID, channel, message, event, ctx)=>{ //behaviours within a joke context command
         //     if(core.mem(ctx.contextID,0).context!='joke')return;
 
         //     console.dir({'JokeCTX':core.mem(ctx.contextID)})
 
         //     if(message[message.length-1]=='!'){
-        //         core.sendMessage(channelID,"That was a funny joke.")
+        //         core.sendMessage(channel,"That was a funny joke.")
         //     }else{
-        //         core.sendMessage(channelID,"and then?")
+        //         core.sendMessage(channel,"and then?")
         //         ctx.context='joke'
         //         console.log("continuation")
         //     }
 
         //     return ctx
         // },
-        // (user, userID, channelID, message, event, ctx)=>{ //redmine command
+        // (user, userID, channel, message, event, ctx)=>{ //redmine command
         //     if (!ctx.Master)return
         //     var rx=( /redmine ((.|\n|\t){2,})/i )
         //     if(!message.match(rx))return
 
         //     act = rx.exec(message)[1]
-        //     var to=setTimeout(()=>{  core.sendMessage(channelID,"Error: No reply from server")    },6000)
+        //     var to=setTimeout(()=>{  core.sendMessage(channel,"Error: No reply from server")    },6000)
 
         //     httpreq.get(`http://188.166.24.184:3000/projects/core_of_the_plan/wiki/${act}.xml`, function (err, res){
         //         clearTimeout(to)
-        //         if (err) return core.sendMessage(channelID,"Error: No reply from server")
+        //         if (err) return core.sendMessage(channel,"Error: No reply from server")
 
-        //         core.sendMessage(channelID,JSON.stringify(res))
+        //         core.sendMessage(channel,JSON.stringify(res))
         //         // console.log(res.statusCode);
         //         // console.log(res.headers);
         //         // console.log(res.body);
@@ -193,12 +193,12 @@ module.exports = (self) => {
 
         //     return ctx
         // },
-        // (user, userID, channelID, message, event, ctx)=>{//Forget Master for this session (debug)
+        // (user, userID, channel, message, event, ctx)=>{//Forget Master for this session (debug)
         //     var rx=( /(forget master)/gi )
         //     if (!message.match(rx) ) return
         //     if (!ctx.Master)return
         //     self.MasterID=""
-        //     core.sendMessage(channelID,"Gotcha.")
+        //     core.sendMessage(channel,"Gotcha.")
         // }
     ]
 }
