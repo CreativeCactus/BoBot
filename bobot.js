@@ -103,8 +103,10 @@ var core = {
         var ctx = { contextID }
         for (var t in triggers) { //Loop through the triggers in order until one sets the break flag, substituting each returned ctx if any. 
             var args = [user, userID, channelID, message, event]
-            if (ctx.break) break; else
-                ctx = passive(bot, user, userID, channel, message, event, triggers[t].call(this, ...args, ctx) || ctx) || ctx
+            if (ctx.break) break; else {//user, userID, channel, message, event, ctx
+                ctx = triggers[t].call(this, user, userID, channel, message, event, ctx) || ctx
+                ctx = passive(bot, user, userID, channel, message, event, ctx) || ctx
+            }
         }
 
         //Add the context to the end of the short term memory, truncate if necessary
