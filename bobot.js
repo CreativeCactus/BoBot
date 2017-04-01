@@ -131,6 +131,7 @@ var core = {
         message = message || "`nil`"
         if (message.length >= 2000) message = message.match(/((.|\n|\t){1,1996})/gi)+'...';
         if (typeof message == "object") for (m in message) if (message.hasOwnProperty(m)) arguments.callee(to, message[m])
+	if (typeof channel == "string") channel = bot.channels.get(channel);
         channel.sendMessage(message)//{ to, message, tts: config.tts })
     },
 

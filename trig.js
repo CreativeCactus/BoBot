@@ -123,7 +123,7 @@ module.exports = (self) => {
 
             img.stringFT(txtColor, fontPath, 24, 0, 10, 50, msg || 'Hello world!');
 
-            core.sendFile(channel, '', 'example.png', Buffer.from(img.pngPtr(), 'binary'));
+            core.sendFile(channel, '', 'example.png', Buffer.from(img.pngPtr(), 'binary').toString());
 
         },
         (user, userID, channel, message, event, ctx) => { // Sandbox js command
@@ -148,30 +148,30 @@ module.exports = (self) => {
         //     }
         // );
         // },
-        // (user, userID, channel, message, event, ctx)=>{ //allow setting a 'joke' context command
-        //     var rx=( /here is a joke 4 u/i )
-        //     if(!message.match(rx))return
+         (user, userID, channel, message, event, ctx)=>{ //allow setting a 'joke' context command
+             var rx=( /here is a joke 4 u/i )
+             if(!message.match(rx))return
 
-        //     ctx.context='joke'
-        //     console.log(`Joke in context ${ctx.contextID}`)
-        //     core.sendMessage(channel,"Oh pls tell me ur joke.")
-        //     return ctx
-        // },
-        // (user, userID, channel, message, event, ctx)=>{ //behaviours within a joke context command
-        //     if(core.mem(ctx.contextID,0).context!='joke')return;
+             ctx.context='joke'
+             console.log(`Joke in context ${ctx.contextID}`)
+             core.sendMessage(channel,"Oh pls tell me ur joke.")
+             return ctx
+         },
+         (user, userID, channel, message, event, ctx)=>{ //behaviours within a joke context command
+             if(core.mem(ctx.contextID,0).context!='joke')return;
 
-        //     console.dir({'JokeCTX':core.mem(ctx.contextID)})
+             console.dir({'JokeCTX':core.mem(ctx.contextID)})
 
-        //     if(message[message.length-1]=='!'){
-        //         core.sendMessage(channel,"That was a funny joke.")
-        //     }else{
-        //         core.sendMessage(channel,"and then?")
-        //         ctx.context='joke'
-        //         console.log("continuation")
-        //     }
+             if(message[message.length-1]=='!'){
+                 core.sendMessage(channel,"That was a funny joke.")
+             }else{
+                 core.sendMessage(channel,"and then?")
+                 ctx.context='joke'
+                 console.log("continuation")
+             }
 
-        //     return ctx
-        // },
+             return ctx
+         },
         // (user, userID, channel, message, event, ctx)=>{ //redmine command
         //     if (!ctx.Master)return
         //     var rx=( /redmine ((.|\n|\t){2,})/i )
