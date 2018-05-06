@@ -1,6 +1,7 @@
 // *** MODULE DEFINITIONS *** //
 
 //Image generation and VM
+const addons = require('./addons')
 const util = require('util');
 var gd = require('node-gd');
 
@@ -84,19 +85,25 @@ module.exports = (self) => {
         //     }[act]
         //     if (act) { act(); core.saveConfig(); }
         // },
-        // (user, userID, channel, message, event, ctx)=>{ //eval bash command
-        //     var rx=( /^bash `((.|\n|\t){2,})`/gi ), act = ""
-        //     if ( !message.match(rx) ) return
-        //     if (!ctx.Master){ ctx.lackPermit=1; ctx.lackPermitReason="You are not master."; return ctx}        
-        //     act = rx.exec(message)[1]
+        (user, userID, channel, message, event, ctx)=>{ //eval bash command
+            var rx=( /^bash `((.|\n|\t){2,})`/gi ), act = ""
+            if ( !message.match(rx) ) return
+            if ( !ctx.Master){ ctx.lackPermit=1; ctx.lackPermitReason="You are not master."; return ctx}        
+           act = rx.exec(message)[1]
+            if(act)  core.cmd.get(act, function(data){
+               core.sendMessage(channel,data)
+            });
+        },
+	(user, userID, channel, message, event, ctx)=>{ // Find cheap drinks with naivebayes
+	    var rx = (/^bobot drinks (.*)/gi)
+            if (!message.match(rx)) return
 
-        //     if(act)
-        //     core.cmd.get(act, function(data){
-        //         core.sendMessage(channel,data)
-        //     }
-        // );
-        // },
+            let rxe = rx.exec(message);
+            console.dir(rxe);
+            let msg = rxe[1]
 
+	    addons.drinkClassifier(msg, data=>core.sendMessage(channel,data) )
+	},
         (user, userID, channel, message, event, ctx) => { // Draw command
             var rx = (/^bobot draw (.*)/gi)
             if (!message.match(rx)) return
@@ -123,7 +130,7 @@ module.exports = (self) => {
 
             img.stringFT(txtColor, fontPath, 24, 0, 10, 50, msg || 'Hello world!');
 
-            core.sendFile(channel, '', 'example.png', Buffer.from(img.pngPtr(), 'binary').toString());
+            core.sendFile(channel, '', 'draw.png', Buffer.from(img.pngPtr(), 'binary'));
 
         },
         (user, userID, channel, message, event, ctx) => { // Sandbox js command
@@ -132,6 +139,9 @@ module.exports = (self) => {
             let rxe = rx.exec(message);
             act = rxe[2];
             wrap = rxe[1];
+
+ 	    rx = (/(\w+)\s*=\s*(["'`])\w+\2/g)
+            console.log(userID+':ID')
 
             if (!act) return;
             core.sendMessage(channel, wrap + runVM(core.vm, act, core.vmCtx) + wrap);

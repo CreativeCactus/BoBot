@@ -143,14 +143,8 @@ var core = {
     },
 
     //uploadFile wrapper
-    sendFile: function (to, msg, fname, data) {
-        to.sendFile({
-            attachment: data || fname,
-            name: fname, //File will be uploaded to Discord as 'fillCIRCLE.png'
-            message: msg
-        }, (err, res) => {
-            if (err) console.dir({ err });
-        });
+    sendFile: function (to, msg, fname, data, options={}) {
+        to.sendFile(data||fname,fname,msg,options)
     },
 
     //Initialize instructions
@@ -193,7 +187,9 @@ db.find({ type: "config", init: true }, (err, docs) => {
 
     bot = new Discord.Client();
 
-    bot.on('ready', function (event) { console.log(`Logged in as ${bot.user.username}`); bot.channels.get('295870878762270720').sendMessage('ready'); });
+    bot.on('ready', function (event) { console.log(`Logged in as ${bot.user.username}`); 
+        // bot.channels.get(''); /*.sendMessage('ready'); */ 
+    });
     bot.on('message', core.HandleMessage);
 
     bot.login(config.token);
