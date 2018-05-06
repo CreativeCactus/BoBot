@@ -164,7 +164,7 @@ db.find({ type: "config", init: true }, (err, docs) => {
         console.log("Init")
         db.insert({ init: false, type: "config", config: { token: "MyAPIToken", myid: "MyBotID", masterid: "MyMastersID", tts: false, sharelink: "optional link to add to server" }, memory: {} },
             (err) => { if (err) console.log("INITERR:" + JSON.stringify(err)) })
-        return InitHelp();
+        return core.InitHelp();
     }
     if (!docs[0].init) return InitHelp();
 
