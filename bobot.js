@@ -129,10 +129,14 @@ var core = {
     //sendmessage wrapper
     sendMessage: function (channel, message) {
         message = message || "`nil`"
-        if (message.length >= 2000) message = message.match(/((.|\n|\t){1,1996})/gi)+'...';
-        if (typeof message == "object") for (m in message) if (message.hasOwnProperty(m)) arguments.callee(to, message[m])
-	if (typeof channel == "string") channel = bot.channels.get(channel);
-        channel.sendMessage(message)//{ to, message, tts: config.tts })
+        if (typeof message == 'string' && message.length >= 2000) message = message.match(/((.|\n|\t){1,1996})/gi)+'...';
+        if (Array.isArray(message)) for (m in message) if (message.hasOwnProperty(m)) arguments.callee(to, message[m])
+	if (typeof channel == "string") channel = bot.channels.get(channel) || bot.users.get(channel);
+        if(!channel) return console.trace(`Unable to sendMessage: channel was nil, message was ${message}`);
+	console.dir({channel});
+	if(channel.send)channel.send(message)
+	else channel.sendMessage(message)
+	//s(message)//{ to, message, tts: config.tts })
     },
 
     //config data to DB

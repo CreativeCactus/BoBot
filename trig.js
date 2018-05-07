@@ -4,6 +4,7 @@
 const addons = require('./addons')
 const util = require('util');
 var gd = require('node-gd');
+const djs = require('discord.js');
 
 function runVM(vm, code, ctx) {
     try {
@@ -27,6 +28,39 @@ webhookInit=(self,core,channelID)=>{
     app.post('/webhook', function(req, res){
 	const event = req.body;
 	const repo = event.repository.full_name;
+
+	res.sendStatus(300);res.end();
+
+	const handlers = {
+		push: e=>{
+			const user = e.user_name || e.user_username
+			const ava = e.user_avatar
+			const repo = e.project.name
+			const msg = e.commits.map(c=>c.message).join('\n').slice(0,2045)
+			const url = `http://git.p.net/root/express/compare/${e.before}...${e.after}`
+
+			const embed = new djs.RichEmbed()
+				.setTitle(`Push: `)
+				.setAuthor(user, ava)
+				.setColor(0x00AE86)
+				.setDescription(msg)
+				.setFooter("f",ava)
+				.setImage(ava)
+				.setThumbnail(ava)
+				.setTimestamp()
+				.setURL(url)
+				.addField("f1","f text")
+				.addField("f2","f text2")
+
+			core.sendMessage(self.MasterID,{embed})
+		},
+		error: e=>{
+			if(self.MasterID)core.sendMessage(self.MasterID,"Unknown webhook, see logs");
+			console.log('Unknown webhook: '+JSON.stringify(e,null,0))
+		}
+	}
+	const h=handlers[event.event_name]||handlers.error
+	return h(event)
 	// If this is a push event, message
 	if(event.pusher && !event.ref_type){
 		const user = event.pusher;
@@ -41,12 +75,12 @@ webhookInit=(self,core,channelID)=>{
 	} else if (event.ref_type==='branch'){
 		const branch = '';
 		const branch2 = event.ref;
-        const url = event.repository.html_url;
-        core.sendMessage(channelID,`\`${event.sender.username}\` branched \`${repo}#${branch}->${branch2}\`.\nSee: \`${url}\``);
-    } else {
-		if(self.MasterID)core.sendMessage(self.MasterID,"Unknown webhook, see logs");
-		console.log('Unknown webhook: '+JSON.stringify(event,null,0))
-	}
+        	const url = event.repository.html_url;
+        	core.sendMessage(channelID,`\`${event.sender.username}\` branched \`${repo}#${branch}->${branch2}\`.\nSee: \`${url}\``);
+    	} //else {
+	//	if(self.MasterID)core.sendMessage(self.MasterID,"Unknown webhook, see logs");
+	//	console.log('Unknown webhook: '+JSON.stringify(event,null,0))
+	//}
         res.sendStatus(300);res.end();
     });
     app.listen(65000);
